@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EMTH211 Python</title>
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EMTH211">
+<style>
+  :root {
+    --bg: #f4f6f9; --card: #ffffff; --text: #1a1f29; --muted: #5d6675;
+    --accent: #1f4e79; --accent-soft: #e3ecf5; --good: #1e7a45; --good-soft: #e1f3e8;
+    --bad: #b3261e; --bad-soft: #fbe5e3; --border: #d9dee6; --code: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11151b; --card: #1b2129; --text: #e8ecf1; --muted: #9aa4b2;
+      --accent: #7fb2e5; --accent-soft: #1f2e3e; --good: #6fcf97; --good-soft: #17301f;
+      --bad: #f28b82; --bad-soft: #3a1c1a; --border: #2c3440; --code: #141a21;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    max-width: 640px; margin: 0 auto;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px; gap: 10px; }
+  h1 { font-size: 18px; margin: 0; }
+  .tabs { display: flex; background: var(--accent-soft); border-radius: 10px; padding: 3px; }
+  .tabs button {
+    border: 0; background: transparent; color: var(--accent); font-weight: 600;
+    padding: 7px 14px; border-radius: 8px; font-size: 14px;
+  }
+  .tabs button.on { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  select {
+    width: 100%; font-size: 15px; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); margin-bottom: 10px;
+    -webkit-appearance: none; appearance: none;
+  }
+  .progress { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; padding: 0 2px 8px; }
+  .bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+  .bar div { height: 100%; background: var(--accent); transition: width .25s; }
+  main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .week { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
+  pre.code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.5;
+    background: var(--code); border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+    overflow-x: auto; margin: 0 0 14px; white-space: pre;
+  }
+  pre.code .blank { background: var(--accent); color: var(--bg); border-radius: 4px; padding: 0 6px; font-weight: 700; }
+
+  /* Flashcard */
+  .scene { flex: 1; perspective: 1200px; min-height: 300px; }
+  .card { position: relative; width: 100%; height: 100%; transition: transform .45s; transform-style: preserve-3d; cursor: pointer; }
+  .card.flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+    padding: 22px 18px; display: flex; flex-direction: column; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,.06); overflow-y: auto;
+  }
+  .back { transform: rotateY(180deg); }
+  .prompt { font-size: 20px; line-height: 1.4; font-weight: 600; margin-bottom: 12px; }
+  .answer {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 16px;
+    background: var(--accent-soft); color: var(--accent); padding: 14px; border-radius: 10px;
+    word-break: break-word; margin-bottom: 14px; font-weight: 600;
+  }
+  .explain { font-size: 15.5px; line-height: 1.5; }
+  .tap { text-align: center; color: var(--muted); font-size: 13px; margin-top: 14px; }
+
+  .controls { display: flex; gap: 10px; padding: 14px 0; }
+  .controls button {
+    flex: 1; border: 1px solid var(--border); background: var(--card); color: var(--text);
+    font-size: 16px; font-weight: 600; padding: 14px; border-radius: 12px;
+  }
+  .controls button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .controls button.knew { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .controls button.again { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+
+  /* Quiz */
+  .qbox { flex: 1; overflow-y: auto; }
+  .qprompt { font-size: 19px; font-weight: 600; line-height: 1.4; margin: 0 0 14px; }
+  .opt {
+    display: block; width: 100%; text-align: left; border: 1.5px solid var(--border);
+    background: var(--card); color: var(--text); border-radius: 12px; padding: 13px;
+    margin-bottom: 10px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14.5px;
+    word-break: break-word;
+  }
+  .opt.right { border-color: var(--good); background: var(--good-soft); color: var(--good); }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+  .feedback { border-radius: 12px; padding: 14px; font-size: 15px; line-height: 1.5; margin-top: 6px; background: var(--accent-soft); }
+  .feedback b { display: block; margin-bottom: 4px; }
+  .hint { background: none; border: 0; color: var(--accent); font-size: 14px; padding: 0 0 12px; font-weight: 600; }
+
+  .done { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 8px; }
+  .done .big { font-size: 48px; font-weight: 700; color: var(--accent); }
+  .done p { color: var(--muted); margin: 0 0 18px; }
+  .done button { border: 0; background: var(--accent); color: var(--bg); font-size: 16px; font-weight: 600; padding: 14px 28px; border-radius: 12px; margin: 4px; }
+  .done button.alt { background: var(--accent-soft); color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>EMTH211 Python</h1>
+  <div class="tabs">
+    <button id="tabCards" class="on">Cards</button>
+    <button id="tabQuiz">Quiz</button>
+  </div>
+</header>
+<select id="topic" aria-label="Topic"></select>
+<div class="progress"><span id="count"></span><span id="score"></span></div>
+<div class="bar"><div id="barFill"></div></div>
+<main id="main"></main>
+
+<script>
+const WEEKS = {
+  0: "NumPy basics & slicing",
+  1: "Week 1: Linear systems & RREF",
+  2: "Week 2: LU decomposition",
+  3: "Week 3: Conditioning, Jacobi & Gauss-Seidel",
+  4: "Week 4: Vector spaces",
+  5: "Week 5: Gram-Schmidt, projections & QR",
+  6: "Week 6: Least squares",
+  7: "Week 7: Eigenspaces",
+  8: "Week 8: Markov, Leslie & power method",
+  9: "Week 9: Spectral theorem, SVD & pseudoinverse",
+  10: "Week 10: Statistics",
+  11: "Week 11–12: Regression & PCA",
+  13: "Test tips"
+};
+
+// w = week, q = question, code = context (____ marks the blank), a = answer, wrong = distractors, e = explanation
+const CARDS = [
+  // ---------- Basics ----------
+  { w:0, q:"Matrix multiply A and B", a:"A @ B", wrong:["A * B","np.multiply(A, B)","A.dot * B"],
+    e:"@ is matrix multiplication. A * B multiplies entry by entry." },
+  { w:0, q:"Transpose of A", a:"A.T", wrong:["A.t","np.T(A)","A.transpose[0]"], e:"A.T swaps rows and columns." },
+  { w:0, q:"3 × 3 identity matrix", a:"np.eye(3)", wrong:["np.ones((3, 3))","np.diag(3)","np.identity[3]"], e:"np.eye(n) gives the n × n identity." },
+  { w:0, q:"n × n matrix of zeros", a:"np.zeros((n, n))", wrong:["np.zeros(n, n)","np.zero((n, n))","np.empty(n)"],
+    e:"The shape goes in as one tuple, so there are double brackets." },
+  { w:0, q:"Dot product of vectors u and v", a:"u @ v", wrong:["u * v","np.cross(u, v)","np.outer(u, v)"],
+    e:"For 1D arrays, @ gives a single number. np.dot(u, v) also works. u * v gives a vector." },
+  { w:0, q:"Outer product of u and v (gives a matrix)", a:"np.outer(u, v)", wrong:["u @ v","u * v","np.inner(u, v)"],
+    e:"Entry [i, j] is u[i] * v[j]." },
+  { w:0, q:"Diagonal entries of A, as a 1D array", a:"np.diag(A)", wrong:["np.eye(A)","A[0, 0]","np.triu(A)"],
+    e:"np.diag on a matrix pulls out the diagonal. np.diag on a vector builds a diagonal matrix." },
+  { w:0, q:"Upper triangular part of A", a:"np.triu(A)", wrong:["np.tril(A)","np.diag(A)","A.T"], e:"triu = upper, tril = lower." },
+  { w:0, q:"Column j of A", a:"A[:, j]", wrong:["A[j]","A[j, :]","A[:j]"], e:"[rows, columns]: all rows, column j." },
+  { w:0, q:"Row i of A", a:"A[i, :]", wrong:["A[:, i]","A[:i]","A[i:]"], e:"Row i, all columns. A[i] also works." },
+  { w:0, q:"Entries below the diagonal in column k", a:"A[k+1:, k]", wrong:["A[k, k+1:]","A[:k, k]","A[k+1, k]"],
+    e:"Rows k+1 to the end, column k. Below the diagonal, the row index is bigger than the column index." },
+  { w:0, q:"Top-left k × k block of A", a:"A[:k, :k]", wrong:["A[k, k]","A[:k]","A[k:, k:]"], e:":k means indices 0 up to k − 1." },
+  { w:0, q:"Make B a separate copy of A", a:"B = A.copy()", wrong:["B = A","B == A","B = A[0]"],
+    e:"B = A makes both names point at the same array, so changing B changes A." },
+  { w:0, q:"Loop i from n − 1 down to 0", a:"for i in range(n-1, -1, -1):", wrong:["for i in range(n, 0, -1):","for i in range(n-1, 0, -1):","for i in range(n):"],
+    e:"range stops before the second number, so stopping at −1 means 0 is included." },
+
+  // ---------- Week 1 ----------
+  { w:1, q:"Swap rows k and p of R", a:"R[[k, p]] = R[[p, k]]", wrong:["R[k] = R[p]","R[k, p] = R[p, k]","R[[k, k]] = R[[p, k]]"],
+    e:"Both rows are read as a pair, then written back swapped. R[k] = R[p] only copies." },
+  { w:1, q:"Make the pivot in row k, column c equal to 1", a:"R[k] = R[k] / R[k, c]", wrong:["R[k] = R[k, c] / R[k]","R[k] = R[k, c]","R[k] = R[k] / k"],
+    e:"Divide the whole row by the pivot value." },
+  { w:1, q:"The pivot is 1. Make R[i, c] zero using pivot row k", a:"R[i] = R[i] - R[i, c] * R[k]", wrong:["R[i] = R[i] - R[k]","R[i] = R[k] - R[i]","R[i, c] = 0"],
+    e:"The multiplier is the entry you want to clear." },
+  { w:1, q:"Row with the biggest absolute entry in column c, from row k down", a:"np.argmax(np.abs(R[k:, c])) + k", wrong:["np.max(R[k:, c])","np.argmax(R[:, c])","np.abs(R[k, c])"],
+    e:"argmax gives the position within the slice, so add k to get the real row number.", hint:"The slice starts at row k." },
+  { w:1, q:"Check whether a decimal x is basically zero", a:"np.isclose(x, 0)", wrong:["x == 0","x is 0","x < 0"],
+    e:"Rounding can leave values like 1e-16, which == 0 would miss." },
+  { w:1, q:"Solve Ax = b (when it's allowed)", a:"np.linalg.solve(A, b)", wrong:["np.linalg.inv(A) * b","A / b","np.linalg.solve(b, A)"],
+    e:"A comes first. inv(A) * b is elementwise, so it's wrong, and it's slower anyway." },
+  { w:1, q:"Which is banned in the RREF question?", a:"np.linalg.solve", wrong:["np.argmax","np.abs","np.isclose"],
+    e:"Banned: lu, solve, inv, solve_triangular, pinv and matrix_power." },
+
+  // ---------- Week 2 ----------
+  { w:2, q:"LU: store the multiplier for row i, pivot k", code:"for k in range(n):\n    for i in range(k+1, n):\n        ____\n        U[i] = U[i] - L[i, k] * U[k]",
+    a:"L[i, k] = U[i, k] / U[k, k]", wrong:["L[k, i] = U[i, k] / U[k, k]","L[i, k] = U[k, k] / U[i, k]","L[i, k] = U[i, k]"],
+    e:"The multiplier is the entry below the pivot divided by the pivot. It's stored in L at the same position." },
+  { w:2, q:"LU: eliminate below the pivot", code:"for k in range(n):\n    for i in range(k+1, n):\n        L[i, k] = U[i, k] / U[k, k]\n        ____",
+    a:"U[i] = U[i] - L[i, k] * U[k]", wrong:["U[i] = U[i] - U[k]","U[k] = U[k] - L[i, k] * U[i]","U[i, k] = 0"],
+    e:"Subtract the multiplier times the pivot row, which turns U[i, k] into 0." },
+  { w:2, q:"LU setup: what do L and U start as?", a:"L = np.eye(n); U = A.copy()", wrong:["L = A.copy(); U = np.eye(n)","L = np.zeros(n); U = A","L = A; U = A"],
+    e:"L starts as the identity (1s on its diagonal). U starts as a copy of A and gets reduced." },
+  { w:2, q:"Forward substitution: solve Ly = b", code:"for i in range(n):\n    ____",
+    a:"y[i] = (b[i] - L[i, :i] @ y[:i]) / L[i, i]", wrong:["y[i] = (b[i] - L[i, i+1:] @ y[i+1:]) / L[i, i]","y[i] = b[i] / L[i, i]","y[i] = (b[i] - L[i, :i] @ y[:i]) * L[i, i]"],
+    e:"Use the y values already found (indices before i), then divide by the diagonal entry." },
+  { w:2, q:"Back substitution: solve Ux = y", code:"for i in range(n-1, -1, -1):\n    ____",
+    a:"x[i] = (y[i] - U[i, i+1:] @ x[i+1:]) / U[i, i]", wrong:["x[i] = (y[i] - U[i, :i] @ x[:i]) / U[i, i]","x[i] = y[i] / U[i, i]","x[i] = (y[i] - U[i, i+1:] @ x[i+1:]) * U[i, i]"],
+    e:"Go from the bottom up, using the x values already found (indices after i)." },
+  { w:2, q:"Order of steps to solve Ax = b with A = LU", a:"Solve Ly = b, then Ux = y", wrong:["Solve Ux = b, then Ly = x","Solve Lx = y, then Uy = b","Multiply L @ U, then solve"],
+    e:"Forward substitution first, then back substitution." },
+
+  // ---------- Week 3 ----------
+  { w:3, q:"Condition number of A", a:"np.linalg.cond(A)", wrong:["np.linalg.det(A)","np.linalg.norm(A)","np.linalg.matrix_rank(A)"],
+    e:"A big condition number means small errors in b can cause big errors in x." },
+  { w:3, q:"2-norm (length) of vector v", a:"np.linalg.norm(v)", wrong:["np.sum(v)","np.abs(v)","v @ v"],
+    e:"v @ v is the squared length." },
+  { w:3, q:"Diagonal matrix D made from A's diagonal", a:"np.diag(np.diag(A))", wrong:["np.diag(A)","np.eye(A)","A * np.eye(1)"],
+    e:"The inner np.diag gets the 1D diagonal, then the outer one builds a matrix from it." },
+  { w:3, q:"Jacobi: one-line vector update", code:"for it in range(maxit):\n    ____",
+    a:"x = (b - (A - np.diag(np.diag(A))) @ x) / np.diag(A)", wrong:["x = (b - A @ x) / np.diag(A)","x = b - (A - np.diag(np.diag(A))) @ x","x = (b - np.diag(A) @ x) / A"],
+    e:"Move the off-diagonal part to the right-hand side, then divide each entry by its diagonal value." },
+  { w:3, q:"Jacobi: update entry i (uses only old values)", code:"for i in range(n):\n    ____",
+    a:"x_new[i] = (b[i] - A[i, :i] @ x[:i] - A[i, i+1:] @ x[i+1:]) / A[i, i]", wrong:["x[i] = (b[i] - A[i, :i] @ x[:i] - A[i, i+1:] @ x[i+1:]) / A[i, i]","x_new[i] = (b[i] - A[i] @ x) / A[i, i]","x_new[i] = b[i] / A[i, i]"],
+    e:"Jacobi writes into a new vector, so every entry uses the previous iteration's values." },
+  { w:3, q:"Gauss-Seidel: update entry i", code:"for i in range(n):\n    ____",
+    a:"x[i] = (b[i] - A[i, :i] @ x[:i] - A[i, i+1:] @ x[i+1:]) / A[i, i]", wrong:["x_new[i] = (b[i] - A[i, :i] @ x[:i] - A[i, i+1:] @ x[i+1:]) / A[i, i]","x[i] = (b[i] - A[i] @ x) / A[i, i]","x[i] = b[i] / A[i, i]"],
+    e:"Gauss-Seidel updates x in place, so entries before i are already the new values." },
+  { w:3, q:"Main difference between Jacobi and Gauss-Seidel", a:"Gauss-Seidel uses new values straight away", wrong:["Jacobi uses new values straight away","Gauss-Seidel needs inv(A)","They give different answers"],
+    e:"Both converge to the same x. Gauss-Seidel usually gets there faster." },
+  { w:3, q:"Stopping condition for an iterative method", a:"np.linalg.norm(x_new - x) < tol", wrong:["x_new == x","np.sum(x_new) < tol","np.linalg.norm(x) < tol"],
+    e:"Stop when the change between iterations is tiny." },
+  { w:3, q:"Check that A is strictly diagonally dominant", a:"np.all(2*np.abs(np.diag(A)) > np.sum(np.abs(A), axis=1))", wrong:["np.all(np.diag(A) > 0)","np.all(np.abs(A) > 1)","np.linalg.det(A) > 0"],
+    e:"Each diagonal entry must beat the sum of the rest of its row. The row sum includes the diagonal, hence the 2×. If this is true, Jacobi and Gauss-Seidel converge." },
+
+  // ---------- Week 4 ----------
+  { w:4, q:"Rank of A", a:"np.linalg.matrix_rank(A)", wrong:["np.linalg.det(A)","len(A)","A.shape[0]"],
+    e:"Rank = number of pivots = dimension of the column space." },
+  { w:4, q:"Are the columns of A linearly independent?", a:"np.linalg.matrix_rank(A) == A.shape[1]", wrong:["np.linalg.matrix_rank(A) == A.shape[0]","np.linalg.det(A) == 0","A.shape[0] == A.shape[1]"],
+    e:"They're independent if every column has a pivot, so rank equals the number of columns." },
+  { w:4, q:"Basis for the null space of A, using SVD", code:"r = np.linalg.matrix_rank(A)\nU, S, Vh = np.linalg.svd(A)\nN = ____",
+    a:"Vh[r:].T", wrong:["Vh[:r].T","U[:, r:]","U[:, :r]"],
+    e:"The rows of Vh after the first r span the null space. Transpose them so they become columns." },
+  { w:4, q:"Dimension of the null space of an m × n matrix", a:"n - np.linalg.matrix_rank(A)", wrong:["m - np.linalg.matrix_rank(A)","np.linalg.matrix_rank(A)","n - m"],
+    e:"Rank–nullity theorem: rank + nullity = number of columns." },
+
+  // ---------- Week 5 ----------
+  { w:5, q:"Projection of v onto u", a:"(u @ v) / (u @ u) * u", wrong:["(u @ v) * u","(u @ v) / (v @ v) * v","u @ v / u"],
+    e:"proj_u(v) = (u·v / u·u) u. What's left over, v − proj, is perpendicular to u." },
+  { w:5, q:"Unit vector in the direction of v", a:"v / np.linalg.norm(v)", wrong:["v / np.sum(v)","v / (v @ v)","np.linalg.norm(v) / v"],
+    e:"Divide by the length." },
+  { w:5, q:"Gram-Schmidt: projection coefficient", code:"for j in range(k):\n    v = A[:, j].copy()\n    for i in range(j):\n        ____\n        v = v - R[i, j] * Q[:, i]",
+    a:"R[i, j] = Q[:, i] @ A[:, j]", wrong:["R[j, i] = Q[:, i] @ A[:, j]","R[i, j] = Q[i] @ A[j]","R[i, j] = np.linalg.norm(v)"],
+    e:"The dot product of the unit vector q_i with column j. R is upper triangular, so i ≤ j." },
+  { w:5, q:"Gram-Schmidt: remove the projection", code:"for i in range(j):\n    R[i, j] = Q[:, i] @ A[:, j]\n    ____",
+    a:"v = v - R[i, j] * Q[:, i]", wrong:["v = v - Q[:, i]","v = R[i, j] * Q[:, i]","Q[:, i] = v - R[i, j]"],
+    e:"Subtract the part of v that points along q_i." },
+  { w:5, q:"Gram-Schmidt: last two lines for column j", code:"    ____\n    Q[:, j] = v / R[j, j]",
+    a:"R[j, j] = np.linalg.norm(v)", wrong:["R[j, j] = v @ v","R[j, j] = 1","R[j, j] = np.sum(v)"],
+    e:"The diagonal of R holds the length of what's left, which is then used to normalise it." },
+  { w:5, q:"QR factorisation with NumPy", a:"Q, R = np.linalg.qr(A)", wrong:["R, Q = np.linalg.qr(A)","Q = np.linalg.qr(A)","Q, R = np.linalg.svd(A)"],
+    e:"Q has orthonormal columns and R is upper triangular." },
+  { w:5, q:"Check that Q has orthonormal columns", a:"np.allclose(Q.T @ Q, np.eye(Q.shape[1]))", wrong:["np.allclose(Q @ Q, np.eye(n))","Q.T == Q","np.linalg.det(Q) == 0"],
+    e:"QᵀQ = I means every column has length 1 and the columns are perpendicular." },
+  { w:5, q:"Check that a QR factorisation is right", a:"np.allclose(Q @ R, A)", wrong:["Q @ R == A","np.allclose(R @ Q, A)","np.allclose(Q.T @ R, A)"],
+    e:"allclose allows for rounding. The order matters: Q then R." },
+  { w:5, q:"Projection matrix onto the line through u", a:"np.outer(u, u) / (u @ u)", wrong:["np.outer(u, u)","(u @ u) / np.outer(u, u)","u @ u / u"],
+    e:"P = uuᵀ / (uᵀu). Then P @ v gives the projection of v." },
+
+  // ---------- Week 6 ----------
+  { w:6, q:"Least squares solution of Ax ≈ b", a:"np.linalg.lstsq(A, b, rcond=None)[0]", wrong:["np.linalg.lstsq(A, b)","np.linalg.solve(A, b)","np.linalg.lstsq(b, A)[0]"],
+    e:"lstsq returns several things. [0] is the solution x." },
+  { w:6, q:"Least squares using the normal equations", a:"np.linalg.solve(A.T @ A, A.T @ b)", wrong:["np.linalg.solve(A, b)","np.linalg.solve(A @ A.T, b)","A.T @ b"],
+    e:"Solve AᵀA x = Aᵀb." },
+  { w:6, q:"Residual vector of a least squares fit", a:"b - A @ x", wrong:["A @ x","b @ A - x","A - b"],
+    e:"What's left after the fit. Its norm measures the error." },
+
+  // ---------- Week 7 ----------
+  { w:7, q:"Eigenvalues and eigenvectors of A", a:"vals, vecs = np.linalg.eig(A)", wrong:["vecs, vals = np.linalg.eig(A)","vals = np.linalg.eig(A)[1]","vals, vecs = np.linalg.svd(A)"],
+    e:"Eigenvalues come first, then the eigenvectors." },
+  { w:7, q:"Eigenvector that goes with vals[i]", a:"vecs[:, i]", wrong:["vecs[i]","vecs[i, :]","vecs[i, i]"],
+    e:"Eigenvectors are the columns of vecs, not the rows. This is a really common mistake." },
+  { w:7, q:"Check that v is an eigenvector of A with eigenvalue lam", a:"np.allclose(A @ v, lam * v)", wrong:["A @ v == v","np.allclose(A * v, lam)","np.allclose(A @ lam, v)"],
+    e:"Av = λv is the definition." },
+  { w:7, q:"Matrix whose null space is the eigenspace for lam", a:"A - lam * np.eye(n)", wrong:["A - lam","A * lam","lam * A - A"],
+    e:"Eigenvectors solve (A − λI)v = 0. Writing A − lam would subtract lam from every entry." },
+
+  // ---------- Week 8 ----------
+  { w:8, q:"Power method: one step with normalising", code:"for it in range(maxit):\n    ____",
+    a:"x = A @ x / np.linalg.norm(A @ x)", wrong:["x = A @ x","x = x / np.linalg.norm(A)","x = np.linalg.norm(A @ x) / A @ x"],
+    e:"Multiply by A, then rescale to length 1 so the numbers don't blow up." },
+  { w:8, q:"Eigenvalue estimate from the power method's x (Rayleigh quotient)", a:"x @ A @ x / (x @ x)", wrong:["np.linalg.norm(x)","A @ x / x","x @ x / (x @ A @ x)"],
+    e:"If x is normalised, x @ x = 1, so it's just x @ A @ x." },
+  { w:8, q:"Which eigenvalue does the power method find?", a:"The one with the largest absolute value", wrong:["The smallest","The one closest to 0","The first one in vals"],
+    e:"The dominant eigenvalue." },
+  { w:8, q:"Inverse power method finds…", a:"The eigenvalue closest to 0 (smallest |λ|)", wrong:["The largest eigenvalue","All eigenvalues","The eigenvalue closest to 1"],
+    e:"It runs the power method on A⁻¹, whose biggest eigenvalue is 1/λ for the smallest λ of A." },
+  { w:8, q:"Shifted inverse power step (find the eigenvalue near sigma)", a:"y = np.linalg.solve(A - sigma*np.eye(n), x)", wrong:["y = np.linalg.solve(A, x) - sigma","y = (A - sigma) @ x","y = np.linalg.solve(A - sigma, x)"],
+    e:"Solve (A − σI)y = x each step, then normalise y. Remember the np.eye." },
+  { w:8, q:"Next year's population with Leslie matrix L", a:"p_next = L @ p", wrong:["p_next = p @ L","p_next = L * p","p_next = L.T @ p"],
+    e:"Multiply the age-class vector by L each year. After k years: np.linalg.matrix_power(L, k) @ p." },
+  { w:8, q:"Markov steady state from the eigenvalue-1 eigenvector", code:"vals, vecs = np.linalg.eig(T)\ni = np.argmin(np.abs(vals - 1))\ns = vecs[:, i].real\ns = ____",
+    a:"s / s.sum()", wrong:["s / np.linalg.norm(s)","s / s.max()","s - s.sum()"],
+    e:"Probabilities must add to 1, so divide by the sum, not the norm. .real drops the +0j." },
+
+  // ---------- Week 9 ----------
+  { w:9, q:"Eigen-decomposition of a symmetric matrix", a:"w, Q = np.linalg.eigh(S)", wrong:["Q, w = np.linalg.eigh(S)","w, Q = np.linalg.svd(S)","w = np.linalg.eig(S)[1]"],
+    e:"eigh is for symmetric matrices. Real eigenvalues, sorted ascending, with orthonormal eigenvectors." },
+  { w:9, q:"Rebuild a symmetric S from w, Q (spectral theorem)", a:"Q @ np.diag(w) @ Q.T", wrong:["Q.T @ np.diag(w) @ Q","Q @ w @ Q.T","np.diag(w) @ Q @ Q.T"],
+    e:"S = QΛQᵀ. Q is orthogonal, so its inverse is Qᵀ." },
+  { w:9, q:"What does np.linalg.svd(A) return?", a:"U, S, Vh (S is 1D, Vh is Vᵀ)", wrong:["U, S, V (S is a matrix)","Only the singular values","Q, R"],
+    e:"Use np.diag(S) to turn S into a matrix." },
+  { w:9, q:"Rank-k approximation using SVD", a:"U[:, :k] @ np.diag(S[:k]) @ Vh[:k, :]", wrong:["U[:k, :] @ np.diag(S[:k]) @ Vh[:, :k]","U[:, :k] @ S[:k] @ Vh[:k, :]","U[:, k] @ np.diag(S) @ Vh[k, :]"],
+    e:"First k columns of U, first k singular values, first k rows of Vh." },
+  { w:9, q:"Order of the singular values in S", a:"Largest first", wrong:["Smallest first","Random","Same order as A's columns"],
+    e:"So S[0] is the biggest, and S[:k] keeps the most important parts." },
+  { w:9, q:"Pseudoinverse built from a reduced SVD", code:"U, S, Vh = np.linalg.svd(A, full_matrices=False)\nAp = ____",
+    a:"Vh.T @ np.diag(1/S) @ U.T", wrong:["U @ np.diag(1/S) @ Vh","Vh @ np.diag(S) @ U.T","U.T @ np.diag(1/S) @ Vh.T"],
+    e:"A⁺ = V Σ⁻¹ Uᵀ. Flip the order, transpose U and V, and invert the singular values. Use this if pinv is banned." },
+  { w:9, q:"2-norm of a matrix A from its singular values", a:"S[0]", wrong:["S[-1]","np.sum(S)","S[0] / S[-1]"],
+    e:"The largest singular value. S[0] / S[-1] is the condition number." },
+
+  // ---------- Week 10 ----------
+  { w:10, q:"Sample variance of x", a:"np.var(x, ddof=1)", wrong:["np.var(x)","np.var(x, axis=1)","np.cov(x)[0, 1]"],
+    e:"np.var divides by n by default. ddof=1 divides by n − 1." },
+  { w:10, q:"Sample standard deviation of x", a:"np.std(x, ddof=1)", wrong:["np.std(x)","np.sqrt(x)","np.var(x, ddof=1)"],
+    e:"Same ddof rule as var." },
+  { w:10, q:"Covariance between x and y (one number)", a:"np.cov(x, y)[0, 1]", wrong:["np.cov(x, y)","np.cov((x, y), [0, 1])","np.cov(x, y)[0, 0]"],
+    e:"np.cov returns a 2×2 matrix. [0, 1] is cov(x, y) and [0, 0] is var(x). It uses n − 1 by default." },
+  { w:10, q:"Correlation between x and y (one number)", a:"np.corrcoef(x, y)[0, 1]", wrong:["np.corrcoef(x, y)","np.corrcoef(x, y)[0, 0]","np.cov(x, y)[1, 1]"],
+    e:"Same layout as cov, but the diagonal is always 1." },
+  { w:10, q:"Mean of each column of data", a:"np.mean(data, axis=0)", wrong:["np.mean(data, axis=1)","np.mean(data)","data.mean(0, 1)"],
+    e:"axis=0 goes down the columns. The axis you name is the one that disappears." },
+  { w:10, q:"Standardise x (z-scores)", a:"(x - np.mean(x)) / np.std(x, ddof=1)", wrong:["x / np.std(x)","x - np.mean(x)","(x - np.std(x)) / np.mean(x)"],
+    e:"Subtract the mean and divide by the standard deviation. Gives mean 0 and standard deviation 1." },
+  { w:10, q:"Covariance matrix when variables are the columns of X", a:"np.cov(X.T)", wrong:["np.cov(X)","X.T @ X","np.cov(X, axis=1)"],
+    e:"np.cov treats rows as variables by default, so transpose. np.cov(X, rowvar=False) also works." },
+  { w:10, q:"Column 0 of data as x", a:"x = data[:, 0]", wrong:["x = data[0]","x = data[0, :]","x = data[:0]"],
+    e:"All rows, column 0." },
+
+  // ---------- Week 11–12 ----------
+  { w:11, q:"Design matrix for y = c0 + c1·x", a:"X = np.column_stack([np.ones(len(x)), x])", wrong:["X = np.array([1, x])","X = np.column_stack([x, x])","X = x.T"],
+    e:"A column of 1s for the intercept, then a column of x." },
+  { w:11, q:"Regression coefficients from design matrix X", a:"c = np.linalg.lstsq(X, y, rcond=None)[0]", wrong:["c = np.linalg.solve(X, y)","c = X @ y","c = np.linalg.lstsq(y, X)[0]"],
+    e:"X usually isn't square, so use least squares." },
+  { w:11, q:"Fit a straight line with polyfit", a:"np.polyfit(x, y, 1)", wrong:["np.polyfit(y, x, 1)","np.polyfit(x, y)","np.polyfit(x, 1, y)"],
+    e:"It returns [slope, intercept], so the highest power comes first." },
+  { w:11, q:"Predicted values from X and coefficients c", a:"y_hat = X @ c", wrong:["y_hat = c @ X","y_hat = X * c","y_hat = X.T @ c"],
+    e:"Each row of X times the coefficients." },
+  { w:11, q:"R² for a regression fit", a:"1 - np.sum((y - y_hat)**2) / np.sum((y - np.mean(y))**2)", wrong:["np.sum((y - y_hat)**2)","np.corrcoef(y, y_hat)","1 - np.mean(y) / np.mean(y_hat)"],
+    e:"1 − SS_res / SS_tot. The closer to 1, the better the fit." },
+  { w:11, q:"PCA: first step before the SVD", a:"Xc = X - np.mean(X, axis=0)", wrong:["Xc = X / np.std(X)","Xc = X - np.mean(X)","Xc = X.T @ X"],
+    e:"Centre each column by subtracting its own mean." },
+  { w:11, q:"PCA: where are the principal component directions?", code:"U, S, Vh = np.linalg.svd(Xc, full_matrices=False)",
+    a:"The rows of Vh", wrong:["The columns of U","The values in S","The rows of U"],
+    e:"Vh[0] is the first principal component, the direction of greatest variance." },
+  { w:11, q:"PCA: fraction of variance explained by each component", a:"S**2 / np.sum(S**2)", wrong:["S / np.sum(S)","S**2","np.sum(S) / S"],
+    e:"Variance is proportional to the singular values squared." },
+  { w:11, q:"PCA: data projected onto the first k components", a:"Xc @ Vh[:k].T", wrong:["Xc @ Vh[:k]","Vh[:k] @ Xc","Xc @ U[:, :k]"],
+    e:"Gives an n × k array of scores." },
+
+  // ---------- Test tips ----------
+  { w:13, q:"Look up the arguments of np.var in the test terminal", a:"help(np.var)", wrong:["help(np.var())","np.var.help()","print(np.var)"],
+    e:"Pass the function without brackets. Check the Parameters, Returns and Examples sections." },
+  { w:13, q:"List every function in np.linalg", a:"dir(np.linalg)", wrong:["np.linalg()","help()","list(np)"],
+    e:"Gives a short list of names. help(np.linalg) gives the full descriptions." },
+  { w:13, q:"Make a float copy of A so division works", a:"R = A.astype(float).copy()", wrong:["R = A","R = float(A)","R = np.copy(int(A))"],
+    e:"Integer arrays can't hold decimals, so results get messed up." },
+  { w:13, q:"Get the number of rows m and columns n", a:"m, n = A.shape", wrong:["m, n = len(A)","m, n = A.size","m, n = np.shape(A, 2)"],
+    e:"A.shape gives (rows, columns)." },
+  { w:13, q:"Check whether two matrices are equal, allowing for rounding", a:"np.allclose(R1, R2)", wrong:["R1 == R2","np.equal(R1)","np.isclose(R1)"],
+    e:"Gives a single True or False. R1 == R2 gives a whole matrix of True/False values." },
+];
+
+const $ = id => document.getElementById(id);
+const main = $("main");
+let mode = "cards", order = [], pos = 0, flipped = false, score = 0, answered = false, again = [];
+
+// topic dropdown
+const sel = $("topic");
+sel.innerHTML = `<option value="all">All topics (${CARDS.length})</option>` +
+  Object.entries(WEEKS).map(([k, v]) => {
+    const n = CARDS.filter(c => c.w == k).length;
+    return n ? `<option value="${k}">${v} (${n})</option>` : "";
+  }).join("");
+try { const saved = localStorage.getItem("emth211-topic"); if (saved && [...sel.options].some(o => o.value === saved)) sel.value = saved; } catch (e) {}
+sel.onchange = () => { try { localStorage.setItem("emth211-topic", sel.value); } catch (e) {} start(mode); };
+
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function codeBlock(c) { return c.code ? `<pre class="code">${esc(c.code).replace("____", '<span class="blank">____</span>')}</pre>` : ""; }
+
+function pool() {
+  const idx = CARDS.map((_, i) => i);
+  return sel.value === "all" ? idx : idx.filter(i => String(CARDS[i].w) === sel.value);
+}
+
+function start(m, subset) {
+  mode = m; pos = 0; score = 0; again = [];
+  order = shuffle(subset || pool());
+  $("tabCards").classList.toggle("on", m === "cards");
+  $("tabQuiz").classList.toggle("on", m === "quiz");
+  render();
+}
+
+function header() {
+  $("count").textContent = pos < order.length ? `Card ${pos + 1} of ${order.length}` : `${order.length} cards`;
+  $("score").textContent = mode === "quiz" ? `Score ${score}` : (again.length ? `${again.length} to review` : "");
+  $("barFill").style.width = `${(pos / order.length) * 100}%`;
+}
+
+function render() {
+  header();
+  if (pos >= order.length) return renderDone();
+  const c = CARDS[order[pos]];
+  const week = `<div class="week">${esc(WEEKS[c.w])}</div>`;
+  if (mode === "cards") {
+    flipped = false;
+    main.innerHTML = `
+      <div class="scene"><div class="card" id="card">
+        <div class="face front">${week}<div class="prompt">${esc(c.q)}</div>${codeBlock(c)}<div class="tap">Tap to flip</div></div>
+        <div class="face back">${week}<div class="answer">${esc(c.a)}</div><div class="explain">${esc(c.e)}</div></div>
+      </div></div>
+      <div class="controls" id="ctrl"><button class="primary" id="flip">Show answer</button></div>`;
+    $("card").onclick = flip; $("flip").onclick = flip;
+  } else {
+    answered = false;
+    const opts = shuffle([c.a, ...c.wrong]);
+    main.innerHTML = `
+      <div class="qbox">
+        ${week}<div class="qprompt">${esc(c.q)}</div>${codeBlock(c)}
+        ${c.hint ? `<button class="hint" id="hintBtn">Show hint</button>` : ""}
+        ${opts.map((o, i) => `<button class="opt" data-i="${i}">${esc(o)}</button>`).join("")}
+        <div id="fb"></div>
+      </div>
+      <div class="controls"><button class="primary" id="next" style="visibility:hidden">Next</button></div>`;
+    if (c.hint) $("hintBtn").onclick = e => { e.target.outerHTML = `<div class="feedback" style="margin:0 0 14px">${esc(c.hint)}</div>`; };
+    main.querySelectorAll(".opt").forEach(b => b.onclick = () => pick(b, opts, c));
+    $("next").onclick = () => { pos++; render(); };
+  }
+}
+
+function flip() {
+  flipped = !flipped;
+  $("card").classList.toggle("flipped", flipped);
+  if (flipped) {
+    $("ctrl").innerHTML = `<button class="again" id="ag">Again</button><button class="knew" id="kn">Got it</button>`;
+    $("ag").onclick = e => { e.stopPropagation(); again.push(order[pos]); pos++; render(); };
+    $("kn").onclick = e => { e.stopPropagation(); pos++; render(); };
+  }
+}
+
+function pick(btn, opts, c) {
+  if (answered) return;
+  answered = true;
+  const ok = opts[btn.dataset.i] === c.a;
+  if (ok) score++; else again.push(order[pos]);
+  main.querySelectorAll(".opt").forEach(b => { if (opts[b.dataset.i] === c.a) b.classList.add("right"); });
+  if (!ok) btn.classList.add("wrong");
+  $("fb").innerHTML = `<div class="feedback"><b>${ok ? "Correct." : "Not quite."}</b>${esc(c.e)}</div>`;
+  $("next").style.visibility = "visible";
+  header();
+}
+
+function renderDone() {
+  const big = mode === "quiz" ? `${score}/${order.length}` : "Done";
+  const sub = again.length ? `${again.length} card${again.length > 1 ? "s" : ""} to review` : "You got them all.";
+  main.innerHTML = `<div class="done"><div class="big">${big}</div><p>${sub}</p>
+    ${again.length ? `<button id="rev">Review missed cards</button>` : ""}
+    <button class="alt" id="restart">Start again</button></div>`;
+  if (again.length) { const missed = again.slice(); $("rev").onclick = () => start(mode, missed); }
+  $("restart").onclick = () => start(mode);
+}
+
+$("tabCards").onclick = () => start("cards");
+$("tabQuiz").onclick = () => start("quiz");
+start("cards");
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
